@@ -43,27 +43,34 @@ public class TwitterRawDataProcessor {
 	}
 
 	private void processDirRecursively(File dir) {
+		logger.info("Inside directory :{}", dir.getAbsolutePath());
 		File[] files = dir.listFiles((FileFilter) FileFilterUtils.fileFileFilter());
 		File[] dirs = dir.listFiles((FileFilter) FileFilterUtils.directoryFileFilter());
 		Arrays.stream(dirs).parallel().forEach(d -> processDirRecursively(d));
 		Arrays.stream(files).parallel().forEach(file -> processFile(file));
+		logger.info("Processed {} files and {} dirs inside directory :{}", files.length, dirs.length,
+				dir.getAbsolutePath());
 	}
 
 	private void processFile(File file) {
+		logger.info("Processing tweet file:{}", file.getAbsolutePath());
 		try (CompressorInputStream compressorInputStream = new CompressorStreamFactory()
 				.createCompressorInputStream(new BufferedInputStream(new FileInputStream(file)));) {
 			BufferedReader bufferedReader = new BufferedReader(
 					new InputStreamReader(compressorInputStream, StandardCharsets.UTF_8));
 			bufferedReader.lines().forEach(line -> processTweetJson(line));
 		} catch (Exception e) {
-			logger.error("Error while processing file:{}", file.getName(), e);
+			logger.error("Error while processing file:{}", file.getAbsolutePath(), e);
 		}
+		logger.info("Successfully processed tweet file:{}", file.getAbsolutePath());
 	}
 
 	private void processTweetJson(String tweetJson) {
 		try {
 			Status tweetStatus = TwitterObjectFactory.createStatus(tweetJson);
 			if (tweetStatus.isRetweet()) {
+				logger.warn("Not saving tweet as it was retweeted, id:{}, text:{}", tweetStatus.getId(),
+						tweetStatus.getText());
 				return;
 			}
 			User user = tweetStatus.getUser();
@@ -77,8 +84,9 @@ public class TwitterRawDataProcessor {
 			TwitterStatusEntity twitterStatusEntity = new TwitterStatusEntity(tweetStatus);
 			twitterStatusEntity.setUserEntity(userEntity);
 			databaseManager.saveOrUpdate(twitterStatusEntity);
+			logger.info("Successfully processed tweet. id:{}, text:{}", tweetStatus.getId(), tweetStatus.getText());
 		} catch (TwitterException e) {
-			logger.error("Error while processing tweet json", e);
+			logger.debug("Error while processing tweet json");
 		} catch (DatabaseManagerException e) {
 			logger.error("Error while saving twitter entity", e);
 		}

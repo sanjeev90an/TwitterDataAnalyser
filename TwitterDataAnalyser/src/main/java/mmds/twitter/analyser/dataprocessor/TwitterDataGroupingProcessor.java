@@ -72,6 +72,8 @@ public class TwitterDataGroupingProcessor {
 	}
 
 	private void saveAllTweetsForUser(UserEntity userEntity) {
+		logger.info("Processing tweets for user Id:{}, screen name:{} ", userEntity.getId(),
+				userEntity.getScreenName());
 		SessionFactory sessionFactory;
 		try {
 			sessionFactory = databaseManager.getSessionFactory();
@@ -93,6 +95,8 @@ public class TwitterDataGroupingProcessor {
 			FixedSizeSequentialFileWriter fixedSizeSequentialFileWriter = langVsFileWriter.get(lang);
 			fixedSizeSequentialFileWriter.write(userTweetsJson);
 
+			logger.info("Successfully processed {} tweets for user Id:{}, screen name:{} ", list.size(),
+					userEntity.getId(), userEntity.getScreenName());
 		} catch (JsonProcessingException e) {
 			logger.error("Error while getting json for tweet", e);
 		} catch (IOException e) {
