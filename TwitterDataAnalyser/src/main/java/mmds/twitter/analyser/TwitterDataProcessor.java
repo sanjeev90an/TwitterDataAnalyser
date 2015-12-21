@@ -6,7 +6,7 @@ import mmds.twitter.analyser.dataprocessor.TwitterRawDataProcessor;
 public class TwitterDataProcessor {
 
 	public static void main(String[] args) {
-		System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "10");
+		System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "20");
 		String operation = args[0];
 		if ("buildDB".equals(operation)) {
 			String baseDirName = args[1];

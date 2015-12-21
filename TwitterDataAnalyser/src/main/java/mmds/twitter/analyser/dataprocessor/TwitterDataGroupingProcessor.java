@@ -11,6 +11,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
+import org.hibernate.ScrollMode;
+import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -35,7 +37,8 @@ public class TwitterDataGroupingProcessor {
 	public TwitterDataGroupingProcessor(String outputDir) {
 		this.outputDir = outputDir;
 		this.databaseManager = new DatabaseManager();
-		this.databaseManager.setEntityClasses(Arrays.asList(UserEntity.class, TwitterStatusEntity.class));
+		this.databaseManager.setEntityClasses(
+				Arrays.asList(ProcessedFileInfoEntity.class, UserEntity.class, TwitterStatusEntity.class));
 		try {
 			databaseManager.init();
 		} catch (DatabaseManagerException e) {
@@ -50,15 +53,24 @@ public class TwitterDataGroupingProcessor {
 		} catch (DatabaseManagerException e1) {
 			return;
 		}
-		Session session = sessionFactory.openSession();
-		List<UserEntity> list;
-		try {
-			Query createQuery = session.createQuery("from " + UserEntity.class.getName());
-			list = createQuery.list();
-		} finally {
-			closeSession(session);
+		int offset = 0;
+		int maxResults = 5000;
+		while (true) {
+			Session session = sessionFactory.openSession();
+			List<UserEntity> list;
+			try {
+				Query createQuery = session.createQuery("from " + UserEntity.class.getName() + " order by id ");
+				createQuery.setFirstResult(offset++).setMaxResults(maxResults);
+				list = createQuery.list();
+				if (list.size() == 0) {
+					return;
+				} else {
+					list.parallelStream().forEach(user -> saveAllTweetsForUser(user));
+				}
+			} finally {
+				closeSession(session);
+			}
 		}
-		list.parallelStream().forEach(user -> saveAllTweetsForUser(user));
 	}
 
 	private void closeSession(Session session) {
