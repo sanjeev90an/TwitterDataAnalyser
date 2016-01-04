@@ -1,5 +1,6 @@
 package mmds.twitter.analyser.dataprocessor;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -8,11 +9,14 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Transient;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import twitter4j.User;
 
 @Entity
 public class UserEntity {
 
+	@JsonProperty
 	@Id
 	private long id;
 
@@ -52,10 +56,16 @@ public class UserEntity {
 	@Column
 	private boolean geoEnabled;
 
+	@JsonProperty
 	@Transient
 	private List<TwitterStatusEntity> tweets;
 
 	public UserEntity() {
+	}
+
+	public UserEntity(long userId, List<TwitterStatusEntity> tweets) {
+		this.id = userId;
+		this.tweets = new ArrayList<>(tweets);
 	}
 
 	public UserEntity(User user) {

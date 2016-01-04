@@ -11,10 +11,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
-import org.hibernate.ScrollMode;
-import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.criterion.Projections;
+import org.hibernate.criterion.Restrictions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,8 +37,8 @@ public class TwitterDataGroupingProcessor {
 	public TwitterDataGroupingProcessor(String outputDir) {
 		this.outputDir = outputDir;
 		this.databaseManager = new DatabaseManager();
-		this.databaseManager.setEntityClasses(
-				Arrays.asList(ProcessedFileInfoEntity.class, UserEntity.class, TwitterStatusEntity.class));
+		this.databaseManager.setEntityClasses(Arrays.asList(UserVsTweetCountEntity.class, ProcessedFileInfoEntity.class,
+				UserEntity.class, TwitterStatusEntity.class));
 		try {
 			databaseManager.init();
 		} catch (DatabaseManagerException e) {
@@ -54,23 +54,51 @@ public class TwitterDataGroupingProcessor {
 			return;
 		}
 		int offset = 0;
-		int maxResults = 5000;
-		while (true) {
-			Session session = sessionFactory.openSession();
-			List<UserEntity> list;
-			try {
-				Query createQuery = session.createQuery("from " + UserEntity.class.getName() + " order by id ");
-				createQuery.setFirstResult(offset++).setMaxResults(maxResults);
+		int maxResults = 1000;
+		Session session = sessionFactory.openSession();
+		try {
+			while (true) {
+				List<UserEntity> list;
+				Query createQuery = session.createQuery("from " + UserEntity.class.getName());
+				createQuery.setFirstResult(offset * maxResults).setMaxResults(maxResults);
+				offset++;
 				list = createQuery.list();
 				if (list.size() == 0) {
 					return;
 				} else {
-					list.parallelStream().forEach(user -> saveAllTweetsForUser(user));
+					list.stream().filter((userEntity) -> {
+						return "en".equals(userEntity.getLang());
+					}).parallel().forEach(this::updateTweetCountForUser);
 				}
-			} finally {
-				closeSession(session);
 			}
+		} finally {
+			closeSession(session);
 		}
+	}
+
+	void updateTweetCountForUser(UserEntity userEntity) {
+		SessionFactory sessionFactory;
+		try {
+			sessionFactory = databaseManager.getSessionFactory();
+		} catch (DatabaseManagerException e) {
+			return;
+		}
+		Session session = sessionFactory.openSession();
+		Long count = 0l;
+		try {
+			count = (Long) session.createCriteria(TwitterStatusEntity.class)
+					.add(Restrictions.eq("userEntity", userEntity)).setProjection(Projections.rowCount())
+					.uniqueResult();
+
+		} finally {
+			closeSession(session);
+		}
+		try {
+			databaseManager.save(new UserVsTweetCountEntity(userEntity.getId(), count));
+		} catch (DatabaseManagerException e) {
+			logger.error("Error while saving tweet count", e);
+		}
+
 	}
 
 	private void closeSession(Session session) {
@@ -96,7 +124,7 @@ public class TwitterDataGroupingProcessor {
 		try {
 			Query query = session.createQuery(
 					"from " + TwitterStatusEntity.class.getName() + " where userEntity=" + userEntity.getId());
-			List<TwitterStatusEntity> list = query.list();
+			List list = query.list();
 			userEntity.setTweets(list);
 			String userTweetsJson = objectMapper.writeValueAsString(userEntity);
 			String lang = userEntity.getLang();

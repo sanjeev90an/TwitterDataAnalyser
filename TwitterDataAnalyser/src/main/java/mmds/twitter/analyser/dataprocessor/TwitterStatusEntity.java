@@ -8,6 +8,7 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import twitter4j.GeoLocation;
 import twitter4j.Place;
@@ -16,12 +17,14 @@ import twitter4j.Status;
 @Entity
 public class TwitterStatusEntity {
 
+	@JsonProperty
 	@Id
 	private long id;
 
 	@Column
 	private Date createdAt;
 
+	@JsonProperty
 	@Column
 	private String text;
 

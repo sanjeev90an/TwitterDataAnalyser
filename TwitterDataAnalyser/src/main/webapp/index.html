@@ -1,0 +1,59 @@
+<!DOCTYPE HTML>
+<!-- Website template by freewebsitetemplates.com -->
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Survey!!!</title>
+<link rel="stylesheet" href="css/style.css" type="text/css">
+<script
+	src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+<script src="js/app.js"></script>
+<link rel="stylesheet"
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+</head>
+<body ng-app="surveyApp">
+	<div id="header">
+		<div>
+			<h2>Survey</h2>
+		</div>
+	</div>
+	<div ng-controller="mainController">
+		<div class="clearfix" ng-hide="hideSurvey">
+			<h4>This is a survey for the research purpose. We are students
+				from Technical Universität München. We are working on
+				characterization of people depending on the tweets they make. Please
+				go through the tweets and help us identify what do you think, what
+				kind og person s/he is. |Your time and help is really appreaciated,
+				without your help the research will not be possible</h4>
+			<div>
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th><h3>Tweets</h3></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr ng-repeat="tweet in userData.tweets track by $index">
+							<td>{{tweet.text}}</td>
+						</tr>
+					</tbody>
+				</table>
+				<p>What kind of person he is, do you think?</p>
+
+				<form action=""></form>
+				<div ng-repeat="personality in personalityTypes">
+					<input type="checkbox" ng-model="personality.selected"
+						value="{{personality.name}}" id="{{personality.name}}" />
+					{{personality.name}}({{personality.desc}})
+				</div>
+				<p>{{noSelectionErrorMsg}}</p>
+			</div>
+			<button class="btn btn-success" ng-click="submit()">Submit</button>
+		</div>
+
+		<div class="clearfix" ng-show="hideSurvey">Thank you for filling
+			the survey.</div>
+	</div>
+	<div id="footer"></div>
+</body>
+</html>
