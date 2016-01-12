@@ -32,7 +32,8 @@ public class UserDataModel {
 	private List<Long> userIds = new ArrayList<>();
 
 	private int noOfUsers = 500;
-	private long minNoOfTweets = 80;
+	private long minNoOfTweets = 60;
+	private long maxNoOfTweets = 70;
 
 	private static ObjectMapper objectMapper = new ObjectMapper();
 
@@ -51,14 +52,13 @@ public class UserDataModel {
 			Session session = sessionFactory.openSession();
 			try {
 				List<UserVsTweetCountEntity> list = session.createCriteria(UserVsTweetCountEntity.class)
-						.add(Restrictions.gt("count", minNoOfTweets)).addOrder(Order.desc("count"))
-						.setMaxResults(noOfUsers).list();
+						.add(Restrictions.gt("count", minNoOfTweets)).add(Restrictions.lt("count", maxNoOfTweets))
+						.addOrder(Order.desc("count")).setMaxResults(noOfUsers).list();
 				Set<Long> userIdSet = list.stream().map(UserVsTweetCountEntity::getId).collect(Collectors.toSet());
 				List<UserEntity> userEntities = session.createCriteria(UserEntity.class)
 						.add(Restrictions.in("id", userIdSet)).list();
 				List<TwitterStatusEntity> tweets = session.createCriteria(TwitterStatusEntity.class)
-						.add(Restrictions.in("userEntity", userEntities)).list();
-				tweets = tweets.stream().filter((tweet) -> "en".equals(tweet.getLang())).collect(Collectors.toList());
+						.add(Restrictions.in("userEntity", userEntities)).add(Restrictions.eq("lang", "en")).list();
 				userIdVsTweets = tweets.stream().collect(Collectors.groupingBy((twitterStatusEntity) -> {
 					return twitterStatusEntity.getUserEntity().getId();
 				}));
