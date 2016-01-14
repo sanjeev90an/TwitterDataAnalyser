@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.hibernate.Session;
@@ -25,6 +26,10 @@ public class UserDataModel {
 
 	private static final Logger logger = LoggerFactory.getLogger(TwitterRawDataProcessor.class);
 
+	private static Pattern httpURLPattern = Pattern.compile(".*(http://|https://).*");
+
+	private static ObjectMapper objectMapper = new ObjectMapper();
+
 	public static final UserDataModel INSTANCE = new UserDataModel();
 
 	private Map<Long, List<TwitterStatusEntity>> userIdVsTweets = new HashMap<>();
@@ -34,8 +39,6 @@ public class UserDataModel {
 	private int noOfUsers = 500;
 	private long minNoOfTweets = 60;
 	private long maxNoOfTweets = 70;
-
-	private static ObjectMapper objectMapper = new ObjectMapper();
 
 	private AtomicInteger count = new AtomicInteger(0);
 
@@ -59,9 +62,10 @@ public class UserDataModel {
 						.add(Restrictions.in("id", userIdSet)).list();
 				List<TwitterStatusEntity> tweets = session.createCriteria(TwitterStatusEntity.class)
 						.add(Restrictions.in("userEntity", userEntities)).add(Restrictions.eq("lang", "en")).list();
-				userIdVsTweets = tweets.stream().collect(Collectors.groupingBy((twitterStatusEntity) -> {
-					return twitterStatusEntity.getUserEntity().getId();
-				}));
+				userIdVsTweets = tweets.stream().filter((tweet) -> !httpURLPattern.matcher(tweet.getText()).matches())
+						.collect(Collectors.groupingBy((twitterStatusEntity) -> {
+							return twitterStatusEntity.getUserEntity().getId();
+						}));
 				List<Entry<Long, List<TwitterStatusEntity>>> collect = userIdVsTweets.entrySet().stream()
 						.filter((e) -> e.getValue() == null || e.getValue().size() < minNoOfTweets)
 						.collect(Collectors.toList());
@@ -75,7 +79,7 @@ public class UserDataModel {
 		} catch (DatabaseManagerException e) {
 			logger.error("Error while intilizing array");
 		}
-
+		logger.info("User data initialized!!");
 	}
 
 	public UserEntity getNextUser(int noOfTweets) {
