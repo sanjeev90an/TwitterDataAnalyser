@@ -8,37 +8,66 @@ app.controller('mainController', function($scope, $http) {
 	$http.get(getTweetsURL).then(function(response) {
 		$scope.userData = response.data;
 	});
-	$scope.personalityTypes = [ {
-		name : 'Analyst',
-		desc : ' Analysts are rational and impartial. They are fiercely independent, open-minded, strong-willed and imaginative. These traits make Analysts excellent strategic thinkers, but also cause difficulties when it comes to social or romantic pursuits.',
-		selected : false
-
-	}, {
-		name : 'Diplomat',
-		desc : ' Diplomats focus on empathy and cooperation. They are imaginative, being harmonizers in their workplace or social circles. These traits make Diplomats warm, empathic and influential individuals, but also cause issues when there is a need to rely exclusively on cold rationality or make difficult decisions.',
-		selected : false
-	}, {
-		name : 'Sentinel',
-		desc : ' Sentinels are hard working, meticulous and traditional and create order, security and stability wherever they go. They stick to their plans and do not shy away from difficult tasks. However, they can also be very inflexible and reluctant to accept different points of view.',
-		selected : false
-	}, {
-		name : 'Explorer',
-		desc : ' Explorers are utilitarian and practical, spontaneous and shining in situations that require quick reaction and ability to think on your feet. They are masters in physical tools and techniques for convincing other people. They share the ability to connect with their surroundings & undertake risky endeavors or focus solely on sensual pleasures.',
-		selected : false
-	} ];
-	$scope.selection = {
-		personalities : {}
-	};
+	$scope.personalityTypes =[
+    {
+        name:"Conscientiousness",
+        desc:"Scrupulous, meticulous and principled behavior",
+        selected:false
+    },
+    {
+        name:"Extrovert",
+        desc:"Gregarious, outgoing, sociable and projecting one's personality outward",
+        selected:false
+    },
+    {
+        name:"Agreeable",
+        desc:"Compliant, trusting, friendly and cooperative nature",
+        selected:false
+    },
+    {
+        name:"Empathetic",
+        desc:"Understands and shares the feelings of another",
+        selected:false
+    },
+    {
+        name:"Novelty Seeking",
+        desc:"Exploratory, fickle, excitable, quick tempered and extravagant",
+        selected:false
+    },
+    {
+        name:"Perfectionist",
+        desc:"Has an internally motivated desire to be perfect",
+        selected:false
+    },
+    {
+        name:"Rigid",
+        desc:"Inflexibile, difficulty making transitions, adherence to set patterns",
+        selected:false
+    },
+    {
+        name:"Impulsive",
+        desc:"Risk taking, lack of planning and making up one's mind quickly",
+        selected:false
+    },
+    {
+        name:"Psychopath",
+        desc:"An unstable and aggressive person",
+        selected:false
+    },
+    {
+        name:"Obsessive",
+        desc:"Associated with addictive behavior",
+    }
+];
+    $scope.personalityDict = {};
+    
+	$scope.selection = {};
 	$scope.submit = function() {
-		var selectedValues = [];
-		angular.forEach($scope.personalityTypes, function(personality) {
-			if (personality.selected == true) {
-				selectedValues.push(personality.name);
-			}
-		});
-		if (selectedValues.length == 0) {
+	    var selectedValues = [];
+		if (!$scope.selection.name) {
 			$scope.noSelectionErrorMsg = "Please select at least one option";
 		} else {
+    	    selectedValues.push($scope.selection.name)   ;
 			var data = {
 				userId : $scope.userData.id,
 				surveyResults : selectedValues
